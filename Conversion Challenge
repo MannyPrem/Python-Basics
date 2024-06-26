@@ -1,0 +1,8 @@
+seconds = 155
+
+minutes =seconds//60
+
+leftover_seconds = minutes % seconds
+
+print(seconds , "seconds is the same as")
+print(minutes , "minutes and" , leftover_seconds,  "seconds")
