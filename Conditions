@@ -1,0 +1,8 @@
+price = 10   
+if price < 10:
+    print("Bananas are on sale!")   
+elif price > 10:
+    print("Bananas are expensive") 
+else:
+    print("Bananas cost $10")       
+print("I'll buy a few")             
