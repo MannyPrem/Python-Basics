@@ -1,0 +1,6 @@
+import cv2 
+image1 = cv2.imread("Jannik.jpg" , cv2.IMREAD_GRAYSCALE )
+h, w = image1.shape[:2]
+print("Height is" , h , "Width is" , w )
+cv2.imshow("image",image1 ) 
+cv2.waitKey(0)
