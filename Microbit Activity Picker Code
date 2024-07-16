@@ -1,0 +1,18 @@
+# Imports go at the top
+from microbit import *
+import random
+while True:
+    if button_a.is_pressed():
+        random_num = random.randint(1, 6)
+        if random_num == 1:
+            display.scroll('Play a video Game')
+        elif random_num == 2:
+            display.scroll('Watch a movie')
+        elif random_num == 3:
+            display.scroll('Play a board game')
+        elif random_num == 4:
+            display.scroll('Cook a meal')
+        elif random_num == 5:
+            display.scroll('Play a card game')
+        else:
+            display.scroll('Go on a walk')
