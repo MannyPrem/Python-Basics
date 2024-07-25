@@ -1,0 +1,114 @@
+import pytesseract
+import matplotlib.pyplot as plt
+import cv2  # OpenCV module
+import glob
+import os
+
+def display_image(image_path):
+    # Display a single image using plt.imshow()
+    if not os.path.exists(image_path):
+        print(f"Error: The file '{image_path}' does not exist.")
+    else:
+        img = cv2.imread(image_path)
+        if img is None:
+            print(f"Error: The file '{image_path}' could not be read.")
+        else:
+            # Resize image to a fixed width while maintaining aspect ratio
+            fixed_width = 800
+            aspect_ratio = fixed_width / img.shape[1]
+            dimensions = (fixed_width, int(img.shape[0] * aspect_ratio))
+            resized_img = cv2.resize(img, dimensions, interpolation=cv2.INTER_AREA)
+
+            # Display the image
+            plt.imshow(cv2.cvtColor(resized_img, cv2.COLOR_BGR2RGB))
+            plt.title("License Plate Image")
+            plt.axis('off')  # Turn off axis labels
+            plt.show()
+
+def process_license_plates(path_for_license_plates):
+    list_license_plates = []
+    predicted_license_plates = []
+
+    # Loop through all image files in the specified directory
+    for path_to_license_plate in glob.glob(path_for_license_plates, recursive=True):
+        # Get the actual license plate name from the file name
+        license_plate_file = os.path.basename(path_to_license_plate)
+        license_plate, _ = os.path.splitext(license_plate_file)
+        
+        # Append the actual license plate to the list
+        list_license_plates.append(license_plate)
+        
+        # Read each license plate image file using OpenCV
+        img = cv2.imread(path_to_license_plate)
+        if img is None:
+            print(f"Error: The file '{path_to_license_plate}' could not be read.")
+            predicted_license_plates.append("Error: Image not readable")
+            continue
+        
+        # Resize image to a fixed width while maintaining aspect ratio
+        fixed_width = 800
+        aspect_ratio = fixed_width / img.shape[1]
+        dimensions = (fixed_width, int(img.shape[0] * aspect_ratio))
+        resized_img = cv2.resize(img, dimensions, interpolation=cv2.INTER_AREA)
+
+        # Pass each license plate image file to the Tesseract OCR engine
+        predicted_result = pytesseract.image_to_string(
+            resized_img,
+            lang='eng',
+            config='--oem 3 --psm 6 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+        )
+        
+        # Clean up the predicted result
+        filter_predicted_result = "".join(predicted_result.split()).replace(":", "").replace("-", "")
+        predicted_license_plates.append(filter_predicted_result)
+        
+        # Draw rectangle around detected license plate (for visualization purposes)
+        h, w, _ = resized_img.shape
+        boxes = pytesseract.image_to_boxes(resized_img)
+        
+        # Initialize variables to find the bounding box
+        x_min, y_min = w, h
+        x_max, y_max = 0, 0
+        
+        for b in boxes.splitlines():
+            b = b.split(' ')
+            x, y, x2, y2 = int(b[1]), int(b[2]), int(b[3]), int(b[4])
+            x_min, y_min = min(x_min, x), min(y_min, y)
+            x_max, y_max = max(x_max, x2), max(y_max, y2)
+        
+        # Draw the bounding box around the license plate
+        resized_img = cv2.rectangle(resized_img, (x_min, h - y_min), (x_max, h - y_max), (255, 0, 0), 2)
+
+        # Display the image with the rectangle
+        plt.imshow(cv2.cvtColor(resized_img, cv2.COLOR_BGR2RGB))
+        plt.title(f"Detected License Plate: {filter_predicted_result}")
+        plt.axis('off')  # Turn off axis labels
+        plt.show()
+
+    # Print the actual and predicted license plates for comparison
+    print("Actual License Plate", "\t", "Predicted License Plate", "\t", "Accuracy")
+    print("--------------------", "\t", "-----------------------", "\t", "--------")
+
+    def calculate_predicted_accuracy(actual_list, predicted_list):
+        for actual_plate, predict_plate in zip(actual_list, predicted_list):
+            accuracy = "0 %"
+            num_matches = 0
+            if actual_plate == predict_plate:
+                accuracy = "100 %"
+            else:
+                if len(actual_plate) == len(predict_plate):
+                    for a, p in zip(actual_plate, predict_plate):
+                        if a == p:
+                            num_matches += 1
+                    accuracy = str(round((num_matches / len(actual_plate)) * 100, 2)) + "%"
+            print(f"     {actual_plate}\t\t\t{predict_plate}\t\t  {accuracy}")
+
+    calculate_predicted_accuracy(list_license_plates, predicted_license_plates)
+
+# Display the image
+single_image_path = "C:/Users/Manue/OneDrive/Desktop/Python Programs/license-plates.jpg"
+display_image(single_image_path)
+
+# Process the directory of license plates
+path_for_license_plates = os.getcwd() + "/license-plates/**/*.jpg"
+process_license_plates(path_for_license_plates)
